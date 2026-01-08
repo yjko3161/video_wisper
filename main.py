@@ -46,14 +46,17 @@ setup_ffmpeg()
 class StdoutRedirector:
     def __init__(self, callback):
         self.callback = callback
-        self.original_stdout = sys.stdout
+        self.buffer = ""
 
     def write(self, message):
-        self.original_stdout.write(message) # Keep printing to console
-        self.callback(message)
+        # Buffer text to handle fragmented writes
+        self.buffer += message
+        while "\n" in self.buffer:
+            line, self.buffer = self.buffer.split("\n", 1)
+            self.callback(line + "\n")
 
     def flush(self):
-        self.original_stdout.flush()
+        pass
 
 class SubtitleGeneratorApp:
     def __init__(self, root):
@@ -271,7 +274,15 @@ class SubtitleGeneratorApp:
             self.save_as_srt(result["segments"], srt_path)
             
             self.log(f"\nSaved subtitles to: {srt_path}\n")
-            self.root.after(0, lambda: messagebox.showinfo("Success", f"Subtitle generated successfully!\nFile: {srt_path}"))
+            
+            def show_success():
+                if messagebox.askyesno("Success", f"Subtitle generated successfully!\n\nFile saved to:\n{srt_path}\n\nOpen output folder now?"):
+                    try:
+                        os.startfile(os.path.dirname(srt_path))
+                    except Exception:
+                        pass
+
+            self.root.after(0, show_success)
             
         except Exception as e:
             self.log(f"\nError: {str(e)}\n")
