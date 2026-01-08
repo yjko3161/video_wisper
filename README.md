@@ -1,51 +1,45 @@
-# Video Whisper - Auto Subtitle Generator
+# 비디오 위스퍼 - 자동 자막 생성기 (Video Whisper)
 
-video_wisper helps you automatically generate `.srt` subtitles for your video files using OpenAI's state-of-the-art **Whisper** model.
+OpenAI의 최첨단 **Whisper** 모델을 사용하여 동영상 파일의 자막(`.srt`)을 자동으로 생성해주는 프로그램입니다.
 
-It features a simple **Graphical User Interface (GUI)** and handles complex dependencies like FFmpeg automatically, making it easy to use for anyone.
+복잡한 명령어 없이 **간편한 GUI**를 통해 누구나 쉽게 사용할 수 있으며, FFmpeg 설치 등 번거로운 과정 없이 바로 실행 가능합니다.
 
-## 🚀 Key Features
+## 🚀 주요 기능
 
-*   **Easy to Use GUI**: No command line needed. Just browse for a video and click "Generate".
-*   **Automatic FFmpeg**: No need to install FFmpeg on your system manually. The app comes with its own binary.
-*   **Multiple Models**: Choose from `tiny`, `base`, `small`, `medium`, and `large` models to balance speed vs. accuracy.
-*   **Standard Output**: Generates `.srt` files compatible with all major video players (VLC, YouTube, etc.).
-*   **GPU Support**: Automatically uses CUDA (GPU) if available for faster processing.
+*   **쉬운 사용법 (GUI)**: 파일 선택 -> 설정 -> 생성 버튼만 누르면 끝!
+*   **자동 FFmpeg 설정**: 시스템에 FFmpeg를 따로 설치할 필요가 없습니다. 프로그램에 내장되어 있습니다.
+*   **GPU 가속 지원 (CUDA)**: NVIDIA 그래픽카드를 사용하여 매우 빠른 속도로 자막을 생성합니다.
+*   **다양한 모델 지원**:
+    *   `Tiny/Base`: 매우 빠름 (간단한 영상용)
+    *   `Small/Medium`: 속도와 정확도의 균형 (**RTX 2060 추천**)
+    *   `Large`: 최고 정확도 (고사양 필요)
+*   **언어 자동/수동 선택**: 한국어, 영어, 일본어 등 언어를 지정하여 정확도를 높일 수 있습니다.
+*   **힌트(Hint) 기능**: 영상의 핵심 키워드를 입력하여 고유명사나 전문용어 인식률을 대폭 향상시킬 수 있습니다.
 
-## 🛠 Prerequisites
+## � 실행 방법
 
-*   **Python 3.8+** installed on your system.
+1.  **`run.bat`** 파일을 더블 클릭하세요.
+2.  프로그램이 켜지면 **[Browse]** 버튼을 눌러 동영상을 선택합니다.
+3.  **Model Size**를 선택합니다. (RTX 2060 사용자는 **Medium** 권장)
+4.  **Language**를 선택합니다. (기본값: **Korean**)
+5.  (선택사항) **Hint** 칸에 주제나 키워드를 입력합니다. (예: `인공지능, 강의, 딥러닝`)
+6.  **[Generate Subtitles]** 버튼을 클릭합니다.
+7.  완료되면 자막 파일이 영상과 같은 폴더에 생성됩니다.
 
-## 📥 Installation & Setup
+## � 설치 및 환경 설정
 
-1.  **Clone or Download** this repository.
-2.  Navigate to the project folder.
-3.  **Run `run.bat`**.
-    *   This script will automatically create a virtual environment (`venv`), install all required libraries (`openai-whisper`, `torch`, etc.), and launch the application.
-    *   *Note: The first run might take a few minutes to install dependencies.*
+이 프로그램은 **Python 3.8+** 환경에서 작동합니다.
 
-## 📖 How to Use
+1.  이 저장소를 다운로드합니다.
+2.  `run.bat`을 실행하면 자동으로 가상환경(`venv`)을 만들고 필요한 라이브러리를 설치합니다.
+3.  **GPU 사용을 위해**: `install_gpu.bat`을 한 번 실행해주면 CUDA 가속 기능이 활성화됩니다. (설치 완료됨)
 
-1.  Double-click **`run.bat`** to start the application.
-2.  **Step 1**: Click **Browse** and select your video file (`.mp4`, `.mkv`, `.avi`, etc.).
-3.  **Step 2**: Select a **Model Size**.
-    *   `Tiny`/`Base`: Very fast, good for clear audio.
-    *   `Small`/`Medium`: Slower but much more accurate.
-    *   `Large`: High accuracy, requires more RAM/VRAM.
-4.  Click **Generate Subtitles**.
-5.  Wait for the process to finish. The `.srt` file will be saved in the same folder as your video.
+## � 파일 구조
 
-## 📂 Project Structure
-
-*   `main.py`: Core application script with GUI and Whisper logic.
-*   `run.bat`: Launcher script that handles environment setup.
-*   `requirements.txt`: List of Python dependencies.
-*   `venv/`: Virtual environment folder (created automatically).
-
-## 💡 Notes
-
-*   **First Run**: When you use a model (e.g., `base`) for the first time, Whisper will download the model weights. This requires an internet connection.
-*   **Performance**: Transcription speed depends heavily on your hardware (CPU vs GPU).
+*   `main.py`: 프로그램의 핵심 코드 (GUI 및 Whisper 로직)
+*   `run.bat`: 프로그램 실행 스크립트 (원클릭 실행용)
+*   `install_gpu.bat`: GPU 가속(CUDA) 라이브러리 설치 스크립트
+*   `requirements.txt`: 필요한 라이브러리 목록
 
 ---
 *Powered by [OpenAI Whisper](https://github.com/openai/whisper)*

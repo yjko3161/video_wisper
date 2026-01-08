@@ -6,7 +6,7 @@ if not exist venv (
     echo Installing dependencies...
     venv\Scripts\pip install -r requirements.txt
 ) else (
-    if not exist venv\Lib\site-packages\whisper (
+    if not exist venv\Lib\site-packages\faster_whisper (
          echo Installing dependencies...
          venv\Scripts\pip install -r requirements.txt
     )

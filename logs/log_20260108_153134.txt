@@ -1,0 +1,6 @@
+Log file created: logs\log_20260108_153134.txt
+Video Duration: 489.0 seconds
+Loading model 'medium' on device: CUDA... (First time load may take a while)
+Transcribing '광주연인풀버젼3.avi'...
+Forcing language: Korean (ko)
+Detected language 'ko' with probability 1.00
