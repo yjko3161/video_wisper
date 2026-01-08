@@ -1,0 +1,8 @@
+venv/
+logs/
+__pycache__/
+*.pyc
+.srt
+logs/
+.streamlit/
+test.wav

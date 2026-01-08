@@ -1,6 +1,6 @@
 # 비디오 위스퍼 - 자동 자막 생성기 (Video Whisper)
 
-OpenAI의 최첨단 **Whisper** 모델을 사용하여 동영상 파일의 자막(`.srt`)을 자동으로 생성해주는 프로그램입니다.
+**Faster-Whisper** (OpenAI Whisper의 고성능 최적화 버전)를 사용하여 동영상 파일의 자막(`.srt`)을 자동으로 생성해주는 프로그램입니다.
 
 복잡한 명령어 없이 **간편한 GUI**를 통해 누구나 쉽게 사용할 수 있으며, FFmpeg 설치 등 번거로운 과정 없이 바로 실행 가능합니다.
 
@@ -26,13 +26,24 @@ OpenAI의 최첨단 **Whisper** 모델을 사용하여 동영상 파일의 자�
 6.  **[Generate Subtitles]** 버튼을 클릭합니다.
 7.  완료되면 자막 파일이 영상과 같은 폴더에 생성됩니다.
 
+###  웹 버전 (Streamlit) 실행 방법
+
+브라우저에서 간편하게 사용하고 싶다면 웹 버전을 실행하세요.
+
+1.  **`run_web.bat`** 파일을 더블 클릭합니다.
+2.  잠시 후 브라우저가 자동으로 열립니다. (열리지 않으면 터미널에 표시된 `Local URL`을 복사해서 주소창에 붙여넣으세요)
+3.  동영상 파일을 업로드하고 설정을 마친 뒤 **Generate Subtitles**를 누르면 자막을 다운로드할 수 있습니다.
+
 ## � 설치 및 환경 설정
 
 이 프로그램은 **Python 3.8+** 환경에서 작동합니다.
 
 1.  이 저장소를 다운로드합니다.
 2.  `run.bat`을 실행하면 자동으로 가상환경(`venv`)을 만들고 필요한 라이브러리를 설치합니다.
-3.  **GPU 사용을 위해**: `install_gpu.bat`을 한 번 실행해주면 CUDA 가속 기능이 활성화됩니다. (설치 완료됨)
+3.  **GPU 사용을 위해**: `install_gpu.bat`을 한 번 실행해주면 CUDA 가속 기능이 활성화됩니다.
+    *   **RTX 5080 (Blackwell) 사용자**: 이 스크립트는 최신 하드웨어 지원을 위해 **CUDA 12.8** 및 호환되는 PyTorch Nightly 버전을 자동으로 설치합니다.
+    *   기타 GPU 사용자는 필요에 따라 스크립트 내용을 조정하거나, 호환되는 경우 그대로 사용하셔도 됩니다.
+4.  **모델 미리 받기 (선택사항)**: `install_models.bat`을 실행하면 Tiny부터 Large까지 모든 모델을 미리 다운로드해둘 수 있습니다. (실행 시 다운로드 대기 시간 제거)
 
 ## � 파일 구조
 
@@ -42,4 +53,4 @@ OpenAI의 최첨단 **Whisper** 모델을 사용하여 동영상 파일의 자�
 *   `requirements.txt`: 필요한 라이브러리 목록
 
 ---
-*Powered by [OpenAI Whisper](https://github.com/openai/whisper)*
+*Powered by [Faster-Whisper](https://github.com/SYSTRAN/faster-whisper)*

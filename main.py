@@ -67,7 +67,7 @@ class SubtitleGeneratorApp:
         
         # Model Size
         tk.Label(model_frame, text="Model Size:").pack(side="left", padx=5)
-        models = ["tiny", "base", "small", "medium", "large"]
+        models = ["tiny", "base", "small", "medium", "large-v3"]
         for model in models:
             tk.Radiobutton(model_frame, text=model.capitalize(), variable=self.model_size_var, value=model).pack(side="left", padx=(0, 10))
 
