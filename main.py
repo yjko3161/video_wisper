@@ -83,6 +83,22 @@ class SubtitleGeneratorApp:
         self.prompt_var = tk.StringVar()
         tk.Entry(model_frame, textvariable=self.prompt_var, width=20).pack(side="left", padx=5)
         
+        # VAD Filter
+        self.vad_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(model_frame, text="VAD Filter", variable=self.vad_var).pack(side="left", padx=5)
+
+        # Suppress Singing
+        self.suppress_singing_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(model_frame, text="No Singing", variable=self.suppress_singing_var).pack(side="left", padx=5)
+
+        # High Accuracy
+        self.accuracy_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(model_frame, text="Accuracy++", variable=self.accuracy_var).pack(side="left", padx=5)
+
+        # Strict Mode
+        self.strict_mode_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(model_frame, text="Filter++", variable=self.strict_mode_var).pack(side="left", padx=5)
+        
         # Action Block
         action_frame = tk.Frame(self.root, padx=10, pady=10)
         action_frame.pack(fill="x", padx=10, pady=5)
@@ -202,11 +218,11 @@ class SubtitleGeneratorApp:
         self.log_area.config(state='disabled')
 
         # Run in separate thread
-        thread = threading.Thread(target=self.run_process, args=(video_path, self.model_size_var.get(), self.language_var.get(), self.prompt_var.get()))
+        thread = threading.Thread(target=self.run_process, args=(video_path, self.model_size_var.get(), self.language_var.get(), self.prompt_var.get(), self.vad_var.get(), self.suppress_singing_var.get(), self.accuracy_var.get(), self.strict_mode_var.get()))
         thread.daemon = True # Ensure thread dies if main window is closed
         thread.start()
 
-    def run_process(self, video_path, model_size, language_selection, initial_prompt):
+    def run_process(self, video_path, model_size, language_selection, initial_prompt, vad_filter, suppress_singing, high_accuracy, strict_mode):
         try:
             # 1. Get Duration
             self.set_status("Analyzing video...")
@@ -228,7 +244,11 @@ class SubtitleGeneratorApp:
             self.log(f"Transcribing '{os.path.basename(video_path)}'...\n")
             
             # Prepare args
-            transcribe_args = {"beam_size": 5}
+            beam_size = 10 if high_accuracy else 5
+            transcribe_args = {"beam_size": beam_size}
+            if high_accuracy:
+                self.log(f"High Accuracy Mode enabled (Beam Size: {beam_size})\n")
+
             if language_selection != "Auto":
                 lang_map = {
                     "Korean": "ko",
@@ -241,9 +261,34 @@ class SubtitleGeneratorApp:
                     transcribe_args["language"] = code
                     self.log(f"Forcing language: {language_selection} ({code})\n")
             
-            if initial_prompt:
-                transcribe_args["initial_prompt"] = initial_prompt
-                self.log(f"Using hint: '{initial_prompt}'\n")
+            # Construct Prompt
+            final_prompt = initial_prompt if initial_prompt else ""
+            if suppress_singing:
+                # Simplified prompt
+                suppress_msg = "Ignore singing and lyrics."
+                final_prompt = f"{suppress_msg} {final_prompt}".strip()
+                self.log(f"Singing suppression enabled.\n")
+
+            if final_prompt:
+                transcribe_args["initial_prompt"] = final_prompt
+                self.log(f"Using hint/prompt: '{final_prompt}'\n")
+
+            transcribe_args["vad_filter"] = vad_filter
+            if vad_filter:
+                self.log(f"VAD Filter enabled.\n")
+            
+            # Anti-Hallucination Settings
+            if strict_mode:
+                transcribe_args["condition_on_previous_text"] = False
+                transcribe_args["no_speech_threshold"] = 0.6 
+                transcribe_args["log_prob_threshold"] = None
+                transcribe_args["compression_ratio_threshold"] = 2.4
+                self.log(f"Strict Filtering enabled.\n")
+            else:
+                self.log(f"Sensitivity Boosted (Capture EVERYTHING).\n")
+                transcribe_args["condition_on_previous_text"] = True
+                transcribe_args["no_speech_threshold"] = 0.95 # Harder to classify as silence
+                transcribe_args["log_prob_threshold"] = None # Never skip based on confidence
 
             # faster-whisper returns a generator
             segments_generator, info = model.transcribe(video_path, **transcribe_args)
@@ -260,9 +305,9 @@ class SubtitleGeneratorApp:
                     self.safe_after(0, lambda p=percent: self.progress_var.set(p))
                     self.safe_after(0, lambda p=percent: self.progress_label.config(text=f"{int(p)}%"))
                 
-                # Debug log every 10 segments or if verbose
-                if i % 10 == 0:
-                    self.log(f"Processed segment {i}: {segment.start:.1f}s -> {segment.end:.1f}s\n")
+                # Real-time text log
+                text_log = f"[{self.format_timestamp(segment.start)} -> {self.format_timestamp(segment.end)}] {segment.text.strip()}\n"
+                self.log(text_log)
 
             self.log(f"Loop finished. Total segments: {len(segments)}\n")
 
@@ -296,7 +341,9 @@ class SubtitleGeneratorApp:
             self.set_status("Ready")
 
     def save_as_srt(self, segments, filepath):
+        # Save SRT
         with open(filepath, "w", encoding="utf-8") as f:
+            txt_content = ""
             for i, segment in enumerate(segments):
                 start = self.format_timestamp(segment.start)
                 end = self.format_timestamp(segment.end)
@@ -305,6 +352,13 @@ class SubtitleGeneratorApp:
                 f.write(f"{i+1}\n")
                 f.write(f"{start} --> {end}\n")
                 f.write(f"{text}\n\n")
+                txt_content += f"{text} "
+        
+        # Save TXT (Full Transcript)
+        txt_filepath = filepath.replace(".srt", ".txt")
+        with open(txt_filepath, "w", encoding="utf-8") as f:
+            f.write(txt_content.strip())
+            self.log(f"Saved full text to: {txt_filepath}\n")
 
     def format_timestamp(self, seconds):
         td = datetime.timedelta(seconds=seconds)

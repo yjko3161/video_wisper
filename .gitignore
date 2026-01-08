@@ -4,5 +4,6 @@ __pycache__/
 *.pyc
 .srt
 logs/
-.streamlit/
+# .streamlit/
+.streamlit/secrets.toml
 test.wav

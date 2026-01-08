@@ -92,6 +92,11 @@ def main():
             "Hint (Optional)",
             help="Keywords or context to improve accuracy (e.g., 'AI, Lecture, Depp Learning')."
         )
+        
+        vad_filter = st.checkbox("Enable VAD Filter", value=True, help="Reduces hallucinations in silent parts.")
+        suppress_singing = st.checkbox("Suppress Singing (Experimental)", value=False, help="Tries to ignore singing/lyrics via prompt engineering.")
+        high_accuracy = st.checkbox("High Accuracy Mode (Slower)", value=False, help="Increases Beam Size to 10. Good for mumbling or fast speech.")
+        strict_mode = st.checkbox("Strict Filtering (Anti-Loop)", value=True, help="Prevents loops but might skip mumbled speech. Uncheck if too much is skipped.")
 
         st.info(f"Running on: **{'CUDA (GPU)' if torch.cuda.is_available() else 'CPU'}**")
 
@@ -129,14 +134,34 @@ def main():
                 model = load_model(model_size, device, compute_type)
                 
                 # 3. Prepare Args
-                transcribe_args = {"beam_size": 5}
+                beam_size = 10 if high_accuracy else 5
+                transcribe_args = {"beam_size": beam_size}
                 if language != "Auto":
                     lang_map = {"Korean": "ko", "English": "en", "Japanese": "ja", "Chinese": "zh"}
                     if language in lang_map:
                         transcribe_args["language"] = lang_map[language]
                 
-                if initial_prompt:
-                    transcribe_args["initial_prompt"] = initial_prompt
+                # Construct Prompt
+                final_prompt = initial_prompt if initial_prompt else ""
+                if suppress_singing:
+                    # Simplified prompt to reduce negative interference
+                    suppress_msg = "Ignore singing and lyrics."
+                    final_prompt = f"{suppress_msg} {final_prompt}".strip()
+
+                if final_prompt:
+                    transcribe_args["initial_prompt"] = final_prompt
+
+                transcribe_args["vad_filter"] = vad_filter
+                
+                if strict_mode:
+                    transcribe_args["condition_on_previous_text"] = False
+                    transcribe_args["no_speech_threshold"] = 0.6 
+                    transcribe_args["compression_ratio_threshold"] = 2.4
+                else:
+                    # Hyper-Permissive Settings (Capture EVERYTHING)
+                    transcribe_args["condition_on_previous_text"] = True 
+                    transcribe_args["no_speech_threshold"] = 0.95 # Higher = Harder to skip as silence
+                    transcribe_args["log_prob_threshold"] = None # Never skip based on low confidence
 
                 # 4. Transcribe
                 status_text.text("Transcribing... This may take a while.")
@@ -144,10 +169,19 @@ def main():
                 
                 st.success(f"Detected language: {info.language.upper()} (Probability: {info.language_probability:.2f})")
                 
+                # Real-time preview container
+                preview_placeholder = st.empty()
+                full_transcript = ""
+
                 segments = []
                 # Process segments
                 for i, segment in enumerate(segments_generator):
                     segments.append(segment)
+                    
+                    # Update real-time preview
+                    full_transcript += f"[{format_timestamp(segment.start)} -> {format_timestamp(segment.end)}] {segment.text}\n"
+                    preview_placeholder.text_area("Live Preview", value=full_transcript, height=300)
+
                     if duration > 0:
                         percent = min(int((segment.end / duration) * 100), 100)
                         progress_bar.progress(percent)
@@ -155,21 +189,32 @@ def main():
                 progress_bar.progress(100)
                 status_text.text("Subtitle generation complete!")
                 
-                # 5. Create SRT Content
+                # 5. Create SRT & TXT Content
                 srt_content = ""
+                txt_content = ""
                 for i, segment in enumerate(segments):
                     start = format_timestamp(segment.start)
                     end = format_timestamp(segment.end)
                     text = segment.text.strip()
                     srt_content += f"{i+1}\n{start} --> {end}\n{text}\n\n"
+                    txt_content += f"{text} "
                 
-                # 6. Download Button
-                st.download_button(
-                    label="Download .SRT File",
-                    data=srt_content,
-                    file_name=os.path.splitext(uploaded_file.name)[0] + ".srt",
-                    mime="text/plain"
-                )
+                # 6. Download Buttons
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.download_button(
+                        label="Download .SRT File",
+                        data=srt_content,
+                        file_name=os.path.splitext(uploaded_file.name)[0] + ".srt",
+                        mime="text/plain"
+                    )
+                with col2:
+                    st.download_button(
+                        label="Download Full Text (.txt)",
+                        data=txt_content.strip(),
+                        file_name=os.path.splitext(uploaded_file.name)[0] + ".txt",
+                        mime="text/plain"
+                    )
                 
                 # Display text preview
                 with st.expander("Preview Subtitles"):
